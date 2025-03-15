@@ -4,6 +4,7 @@ import 'package:toonflix/models/webtoon_models.dart';
 import '../services/api_service.dart';
 import '../widgets/webtoon_item.dart';
 import 'package:toonflix/screens/episode_screen.dart';
+import '../widgets/webtoon_list.dart';
 
 class HomeScreen extends StatefulWidget {
   List<String>? favoriteMarks;
@@ -36,39 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // List<WebtoonModel> webtoons = [];
   Widget buildList(BuildContext context, AsyncSnapshot snapshot) {
     if (snapshot.hasData) {
-      return ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            bool isFavorite = false;
-            if (widget.favoriteMarks != null) {
-              isFavorite =
-                  widget.favoriteMarks!.contains(snapshot.data[index].id);
-            }
-            // print(isFavorite);
-            return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            EpisodeScreen(model: snapshot.data[index]),
-                        fullscreenDialog: true,
-                      )).then((_) {
-                    // This runs when Screen A is shown again
-                    setState(() {
-                      getFavorite();
-                    });
-                  });
-                },
-                child: WebtoonItem(
-                  model: snapshot.data[index],
-                  isFavorite: isFavorite,
-                ));
-          },
-          separatorBuilder: (context, index) {
-            return SizedBox(width: 30);
-          },
-          itemCount: snapshot.data!.length);
+      return WebtoonList(dataSnapshot: snapshot);
     }
     return Center(
       child: CircularProgressIndicator(),
@@ -90,7 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
       body: Column(
-        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
             child: FutureBuilder(

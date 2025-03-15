@@ -6,12 +6,11 @@ import 'package:toonflix/models/webtoon_episode.dart';
 import 'package:toonflix/models/webtoon_models.dart';
 import 'package:toonflix/services/api_service.dart';
 import 'package:toonflix/widgets/episode.dart';
-import '../models/webtoon_info.dart';
+import 'package:toonflix/models/webtoon_info.dart';
 
 class EpisodeScreen extends StatefulWidget {
   WebtoonModel model;
   late WebtoonInfo info;
-  late List<WebtoonEpisode> episodes;
   late final SharedPreferences SharedPrefs;
   EpisodeScreen({super.key, required this.model});
   bool isFavorite = false;
@@ -22,16 +21,66 @@ class EpisodeScreen extends StatefulWidget {
 
 class _EpisodeScreenState extends State<EpisodeScreen> {
   static const _SharedPrefFavoriteKey = "FAVORITE";
+  late List<WebtoonEpisode> episodes;
+  late List<Episode> episodeWidget;
+  late ScrollController _scrollController;
+  int _showEpisodeCount = 3;
+  bool isLoading = true;
+  bool isDispose = false;
 
-  Widget getWebtoonEpisode(BuildContext context, AsyncSnapshot snapshot) {
-    if (snapshot.hasData) {
-      widget.episodes = snapshot.data;
-      return Column(children: [
-        for (var episode in widget.episodes)
-          Episode(model: widget.model, episode: episode),
-      ]);
+  void loadEpisode() async {
+    episodes =
+        await APIService.getInstance().getWebtoonEpisodes(widget.model.id);
+    if (isDispose == false) {
+      setState(() {
+        for (int i = 0; i < _showEpisodeCount; i++)
+          episodeWidget.add(Episode(
+            model: widget.model,
+            episode: episodes[i],
+            animationOrder: i,
+          ));
+
+        isLoading = false;
+      });
     }
-    return Container();
+  }
+
+  @override
+  void dispose() {
+    isDispose = true;
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSharedPreferences();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    episodeWidget = [];
+    loadEpisode();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent &&
+        _showEpisodeCount < episodes.length) {
+      int startIdx = _showEpisodeCount;
+      _showEpisodeCount += 3;
+
+      if (_showEpisodeCount > episodes.length)
+        _showEpisodeCount = episodes.length;
+
+      setState(() {
+        for (int i = startIdx; i < _showEpisodeCount; i++) {
+          episodeWidget.add(Episode(
+            model: widget.model,
+            episode: episodes[i],
+            animationOrder: i,
+          ));
+        }
+      });
+    }
   }
 
   Widget getWebtoonInfo(BuildContext context, AsyncSnapshot snapshot) {
@@ -117,12 +166,6 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    getSharedPreferences();
-  }
-
   void addFavorite() async {
     List<String>? favorites =
         widget.SharedPrefs.getStringList(_SharedPrefFavoriteKey);
@@ -159,11 +202,14 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
         ],
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         padding: EdgeInsets.all(30),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(width: double.infinity),
-            SizedBox(height: 30),
+            SizedBox(
+              height: 50,
+            ),
             Hero(
               tag: widget.model.id,
               child: Container(
@@ -192,12 +238,10 @@ class _EpisodeScreenState extends State<EpisodeScreen> {
                 future:
                     APIService.getInstance().getWebtoonInfo(widget.model.id),
                 builder: getWebtoonInfo),
-            SizedBox(height: 30),
-            FutureBuilder(
-              future:
-                  APIService.getInstance().getWebtoonEpisodes(widget.model.id),
-              builder: getWebtoonEpisode,
-            )
+            SizedBox(
+              height: 30,
+            ),
+            isLoading ? Center() : Column(children: episodeWidget)
           ],
         ),
       ),

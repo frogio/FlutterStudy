@@ -4,6 +4,7 @@ import 'package:uipractice/widgets/balance.dart';
 import './widgets/button.dart';
 import './widgets/userInfo.dart';
 import './widgets/card.dart';
+import './widgets/rotate_number.dart';
 
 void main() {
   runApp(UIPractice());
@@ -29,8 +30,18 @@ class UIPractice extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Balance(balance: 4294967295),
-                    // Balance
+                    Row(
+                      children: [
+                        Text("\$ ",
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 40)),
+                        RotateNumber(
+                            number: 99999999999,
+                            animationDuration: 200,
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 40)),
+                      ],
+                    ),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
